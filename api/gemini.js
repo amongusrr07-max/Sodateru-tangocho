@@ -3,7 +3,7 @@
 //
 // 呼び出し元（src/App.jsx）は今まで通り Anthropic 形式のレスポンス
 // { content: [{ type: "text", text: "..." }] } を期待しているので、
-// ここでGeminiのレスポンスをその形に変換して返してる。
+// ここでGeminiのレスポンスをその形に変換して返してる。あ
 
 const MODEL = "gemini-2.0-flash";
 // 無料枠で使えるモデル名はGoogleがちょくちょく変更するから、
