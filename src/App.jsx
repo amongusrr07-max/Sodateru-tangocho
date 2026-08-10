@@ -204,13 +204,7 @@ function weightedSample(words, count, today) {
   return result;
 }
 
-    } else {
-      indexByKey.set(key, result.length);
-      result.push(w);
-    }
-  }
-  return result;
-}
+    
 
 // 新しく追加する単語を、既存の単語帳と統合する（重複は既存側にマージ）
 function mergeIntoExisting(existingList, incomingWords) {
