@@ -60,14 +60,23 @@ export default async function handler(req, res) {
 
     const data = await response.json();
 
-    if (!response.ok) {
-      res.status(response.status).json({ error: data?.error?.message || "Gemini APIエラー" });
+        if (!response.ok) {
+      res.status(response.status).json({ 
+        error: data?.error?.message || "Gemini APIエラーが発生したよ",
+        details: data
+      });
       return;
     }
 
+
     const text = (data.candidates?.[0]?.content?.parts || []).map((p) => p.text || "").join("");
     res.status(200).json({ content: [{ type: "text", text }] });
-  } catch (e) {
-    res.status(500).json({ error: String(e) });
+    } catch (e) {
+    console.error("Gemini Error:", e);
+    res.status(500).json({ 
+      error: e.message || String(e),
+      details: e.stack || e
+    });
   }
+
 }
