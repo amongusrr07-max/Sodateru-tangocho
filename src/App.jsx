@@ -175,19 +175,35 @@ function weightedSample(words, count, today) {
 }
 
 // 同じリスト内の重複語を先頭優先でまとめる（意味/例文は空いてる方を補完）
-function dedupeSelf(list) {
+  function dedupeSelf(list) {
   const indexByKey = new Map();
   const result = [];
+
   for (const w of list) {
     const key = normWord(w.word);
+
     if (indexByKey.has(key)) {
       const i = indexByKey.get(key);
+      const existing = result[i];
+
+      // すでに登録済みのデータに対して、空いている項目があれば新しいwのデータで補完する！
       result[i] = {
-        ...result[i],
-        meaning: result[i].meaning?.trim() ? result[i].meaning : w.meaning,
-        example: result[i].example || w.example,
-        exampleTranslation: result[i].exampleTranslation || w.exampleTranslation,
+        ...existing,
+        meaning: existing.meaning?.trim() ? existing.meaning : (w.meaning || ""),
+        example: existing.example?.trim() ? existing.example : (w.example || ""),
+        exampleTranslation: existing.exampleTranslation?.trim() 
+          ? existing.exampleTranslation 
+          : (w.exampleTranslation || "")
       };
+    } else {
+      indexByKey.set(key, result.length);
+      result.push({ ...w });
+    }
+  }
+
+  return result;
+}
+
     } else {
       indexByKey.set(key, result.length);
       result.push(w);
