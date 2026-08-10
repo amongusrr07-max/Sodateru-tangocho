@@ -5,7 +5,7 @@
 // { content: [{ type: "text", text: "..." }] } を期待しているので、
 // ここでGeminiのレスポンスをその形に変換して返してる。
 
-const MODEL = "gemini-1.5-flash";
+const MODEL = "gemini-2.0-flash";
 // 無料枠で使えるモデル名はGoogleがちょくちょく変更するから、
 // もし動かなくなったら https://ai.google.dev/gemini-api/docs/models で
 // 今の無料枠モデル名を確認してここを書き換えてね（例: "gemini-flash-latest" など）
