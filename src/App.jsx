@@ -1246,7 +1246,7 @@ export default function EikenTangocho() {
             </div>
             <div>
               <h1 className="text-2xl leading-tight font-bold" style={{ color: C.text }}>
-                単語帳メーカー
+                育てる単語帳
               </h1>
               <p className="text-xs tracking-wide" style={{ color: C.textMuted }}>
                 手書きノート → AIが単語帳にするやつ
