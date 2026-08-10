@@ -5,7 +5,7 @@
 // { content: [{ type: "text", text: "..." }] } を期待しているので、
 // ここでGeminiのレスポンスをその形に変換して返してる。
 
-const MODEL = "gemini-1.5-flash-latest";
+const MODEL = "gemini-1.5-flash";
 // 無料枠で使えるモデル名はGoogleがちょくちょく変更するから、
 // もし動かなくなったら https://ai.google.dev/gemini-api/docs/models で
 // 今の無料枠モデル名を確認してここを書き換えてね
@@ -44,7 +44,7 @@ export default async function handler(req, res) {
     }));
 
     // モデル名を変数 MODEL に連動させる
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${process.env.GEMINI_API_KEY}`;
+    const url = `https://generativelanguage.googleapis.com/v1/models/${MODEL}:generateContent?key=${process.env.GEMINI_API_KEY}`;
 
     // デバッグ用：送信リクエストのログ
     console.log(`🚀 [Gemini Request] Model: ${MODEL}, Messages Count: ${contents.length}`);
