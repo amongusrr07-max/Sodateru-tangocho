@@ -1046,6 +1046,7 @@ export default function EikenTangocho() {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [showBackup, setShowBackup] = useState(false);
   const [showChangelog, setShowChangelog] = useState(false);
+  const [showDataNotice, setShowDataNotice] = useState(false);
   const [exampleLoadingIds, setExampleLoadingIds] = useState(() => new Set());
   const fileInputRef = useRef(null);
 
@@ -1535,25 +1536,43 @@ export default function EikenTangocho() {
         )}
 
         <div className="mt-10 pt-4" style={{ borderTop: `1px solid ${C.border}` }}>
-          <button onClick={() => setShowChangelog((s) => !s)} className="flex items-center gap-1.5 text-xs font-medium mx-auto" style={{ color: C.textMuted }}>
-            <History size={12} /> アプデメモ {showChangelog ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+          <button
+            onClick={() => setShowDataNotice((s) => !s)}
+            aria-expanded={showDataNotice}
+            className="flex items-center gap-1.5 text-xs font-medium mx-auto"
+            style={{ color: C.textMuted }}
+          >
+            データについて {showDataNotice ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
           </button>
-          {showChangelog && (
-            <div className="mt-3 space-y-3">
-              {CHANGELOG.map((c) => (
-                <div key={c.v}>
-                  <p className="text-xs font-bold mb-1" style={{ color: C.blue, fontFamily: "'Silkscreen', monospace" }}>
-                    {c.v}
-                  </p>
-                  <ul className="text-xs space-y-0.5" style={{ color: C.textMuted }}>
-                    {c.items.map((it, i) => (
-                      <li key={i}>・{it}</li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
+          {showDataNotice && (
+            <div className="mt-3 px-3 py-3 rounded-xl text-xs leading-relaxed space-y-2" style={{ background: C.surfaceRaised, color: C.textMuted }}>
+              <p><span style={{ color: C.text, fontWeight: 700 }}>単語帳データ：</span>この端末・ブラウザの中だけに保存されます。ほかの利用者と共有されることはありません。</p>
+              <p><span style={{ color: C.text, fontWeight: 700 }}>AI機能：</span>写真や入力した単語は、回答を作るためにGoogle Gemini APIへ送信されます。個人情報・顔写真・学校名などが写った画像は送らないでね。</p>
+              <p><span style={{ color: C.text, fontWeight: 700 }}>バックアップ：</span>ブラウザのデータを消すと単語帳が消える場合があります。大切な単語は「一覧」タブのバックアップを使って保存してね。</p>
             </div>
           )}
+
+          <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${C.border}` }}>
+            <button onClick={() => setShowChangelog((s) => !s)} className="flex items-center gap-1.5 text-xs font-medium mx-auto" style={{ color: C.textMuted }}>
+              <History size={12} /> アプデメモ {showChangelog ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+            </button>
+            {showChangelog && (
+              <div className="mt-3 space-y-3">
+                {CHANGELOG.map((c) => (
+                  <div key={c.v}>
+                    <p className="text-xs font-bold mb-1" style={{ color: C.blue, fontFamily: "'Silkscreen', monospace" }}>
+                      {c.v}
+                    </p>
+                    <ul className="text-xs space-y-0.5" style={{ color: C.textMuted }}>
+                      {c.items.map((it, i) => (
+                        <li key={i}>・{it}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
