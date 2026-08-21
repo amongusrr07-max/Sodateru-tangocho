@@ -67,8 +67,8 @@ const DAILY_LIMIT = 3;
 
 const CHANGELOG = [
     {
-    v: "v0.9",
-    items: ["日本語の意味から英単語を選ぶ4択クイズを追加"],
+    v: "v0.10",
+    items: ["意味クイズと穴埋めクイズを整理し、意味クイズの出題方向を選べるように"],
   },
   { v: "v0.8", items: [
 
@@ -562,7 +562,8 @@ function buildLocalMeaningQuiz(words, count, today) {
 
 function Quiz({ words, onRemoveWord, onAnswer, onCacheContextQuestion }) {
   const [phase, setPhase] = useState("setup");
-  const [quizMode, setQuizMode] = useState("meaning"); // meaning | context | japanese
+  const [quizMode, setQuizMode] = useState("meaning"); // meaning | context
+  const [meaningDirection, setMeaningDirection] = useState("ja-en"); // ja-en | en-ja
   const [source, setSource] = useState("all"); // all | wrong
   const [count, setCount] = useState(5);
   const [questions, setQuestions] = useState([]);
@@ -593,7 +594,7 @@ function Quiz({ words, onRemoveWord, onAnswer, onCacheContextQuestion }) {
     const today = todayStr();
     try {
       let qs;
-      if (quizMode === "japanese") {
+      if (quizMode === "meaning" && meaningDirection === "ja-en") {
         const eligible = pool.filter((w) => w.word && w.meaning);
         const targets = weightedSample(eligible, count, today);
         qs = [];
@@ -667,12 +668,21 @@ function Quiz({ words, onRemoveWord, onAnswer, onCacheContextQuestion }) {
         <MiniToggle
           options={[
             { value: "meaning", label: "意味クイズ" },
-            { value: "japanese", label: "日本語→英語" },
             { value: "context", label: "穴埋めクイズ" },
           ]}
           value={quizMode}
           onChange={setQuizMode}
         />
+        {quizMode === "meaning" && (
+          <MiniToggle
+            options={[
+              { value: "ja-en", label: "日本語→英語" },
+              { value: "en-ja", label: "英語→日本語" },
+            ]}
+            value={meaningDirection}
+            onChange={setMeaningDirection}
+          />
+        )}
         <MiniToggle
           options={[
             { value: "all", label: "すべて" },
@@ -1312,7 +1322,7 @@ export default function EikenTangocho() {
             </div>
           </div>
           <span className="text-[10px] tracking-wide" style={{ color: C.textMuted }}>
-            v0.9
+            v0.10
           </span>
         </header>
 
