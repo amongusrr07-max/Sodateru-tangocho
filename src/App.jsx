@@ -66,9 +66,12 @@ const PAGE_SIZE = 20;
 const DAILY_LIMIT = 3;
 
 const CHANGELOG = [
-  {
-    v: "v0.8",
-    items: [
+    {
+    v: "v0.9",
+    items: ["日本語の意味から英単語を選ぶ4択クイズを追加"],
+  },
+  { v: "v0.8", items: [
+
       "苦手な単語ほど出やすい重み付けクイズ（1日3回までカウント変動、それ以降はその日出にくく）",
       "しばらく出てない単語は出やすく補正",
       "「苦手な単語だけ」で復習できるモードを追加",
@@ -340,6 +343,23 @@ async function generateDistractors(word, meaning, excludeMeanings) {
   return parsed.filter((m) => m && !excludeMeanings.includes(m)).slice(0, 3);
 }
 
+async function generateEnglishDistractors(word, meaning, excludeWords) {
+  const systemPrompt = `あなたは英検の4択クイズを作る先生です。
+与えられた英単語と日本語の意味をもとに、正解とは異なる、もっともらしい英単語の誤答を3つ作ってください。
+正解と同じ品詞・近い難易度で、日本語の意味だけでは区別しにくい選択肢にしてください。
+正解の単語や、次の除外語は絶対に含めないでください：${excludeWords.join(", ")}
+出力は必ず次の形式のJSON配列のみ（説明やコードフェンスなし）：
+["wrong1","wrong2","wrong3"]`;
+  const parsed = await callClaudeJSON(systemPrompt, `正解の英単語: ${word}\\n日本語の意味: ${meaning}\\n英語の誤答を3つ作って。`);
+  if (!Array.isArray(parsed)) throw new Error("bad format");
+  const excluded = new Set(excludeWords.map(normWord));
+  return parsed
+    .filter((w) => typeof w === "string" && w.trim() && !excluded.has(normWord(w)))
+    .map((w) => w.trim())
+    .filter((w, i, arr) => arr.findIndex((x) => normWord(x) === normWord(w)) === i)
+    .slice(0, 3);
+}
+
 async function generateExampleSentence(word, meaning) {
   const systemPrompt = `あなたは英検を勉強する日本の高校生のための例文作成アシスタントです。
 与えられた英単語（または熟語）を使った、高校生にもわかりやすい自然な英語の例文を1つ作ってください。
@@ -542,7 +562,7 @@ function buildLocalMeaningQuiz(words, count, today) {
 
 function Quiz({ words, onRemoveWord, onAnswer, onCacheContextQuestion }) {
   const [phase, setPhase] = useState("setup");
-  const [quizMode, setQuizMode] = useState("meaning"); // meaning | context
+  const [quizMode, setQuizMode] = useState("meaning"); // meaning | context | japanese
   const [source, setSource] = useState("all"); // all | wrong
   const [count, setCount] = useState(5);
   const [questions, setQuestions] = useState([]);
@@ -573,7 +593,29 @@ function Quiz({ words, onRemoveWord, onAnswer, onCacheContextQuestion }) {
     const today = todayStr();
     try {
       let qs;
-      if (quizMode === "meaning") {
+      if (quizMode === "japanese") {
+        const eligible = pool.filter((w) => w.word && w.meaning);
+        const targets = weightedSample(eligible, count, today);
+        qs = [];
+        for (const w of targets) {
+          const localDistractors = shuffle(
+            eligible.filter((o) => o.id !== w.id && normWord(o.word) !== normWord(w.word))
+          )
+            .slice(0, 3)
+            .map((o) => o.word);
+          let distractors = localDistractors;
+          if (distractors.length < 3) {
+            distractors = await generateEnglishDistractors(w.word, w.meaning, [w.word, ...localDistractors]);
+          }
+          const uniqueDistractors = distractors
+            .filter((d) => normWord(d) !== normWord(w.word))
+            .filter((d, i, arr) => arr.findIndex((x) => normWord(x) === normWord(d)) === i)
+            .slice(0, 3);
+          if (uniqueDistractors.length < 3) throw new Error("英語の選択肢を作れなかったよ");
+          const choices = shuffle([w.word, ...uniqueDistractors]);
+          qs.push({ id: w.id, word: w.word, meaning: w.meaning, answer: w.word, choices, mode: "japanese" });
+        }
+      } else if (quizMode === "meaning") {
         if (enoughForLocalDistractors) {
           qs = buildLocalMeaningQuiz(pool.filter((w) => w.meaning), count, today);
         } else {
@@ -625,6 +667,7 @@ function Quiz({ words, onRemoveWord, onAnswer, onCacheContextQuestion }) {
         <MiniToggle
           options={[
             { value: "meaning", label: "意味クイズ" },
+            { value: "japanese", label: "日本語→英語" },
             { value: "context", label: "穴埋めクイズ" },
           ]}
           value={quizMode}
@@ -723,7 +766,7 @@ function Quiz({ words, onRemoveWord, onAnswer, onCacheContextQuestion }) {
                       {w.word}
                     </span>
                     <SpeakButton word={w.word} size={13} />
-                    <span style={{ color: C.textMuted }}>{w.answer}</span>
+                    <span style={{ color: C.textMuted }}>{w.mode === "japanese" ? w.meaning : w.answer}</span>
                   </div>
                   <button
                     onClick={() => removeWord(w.id)}
@@ -803,6 +846,11 @@ function Quiz({ words, onRemoveWord, onAnswer, onCacheContextQuestion }) {
           <p className="text-lg font-semibold text-center leading-relaxed" style={{ color: C.text, fontFamily: "'Inter', sans-serif" }}>
             {q.sentence}
           </p>
+        ) : q.mode === "japanese" ? (
+          <div className="text-center px-2">
+            <p className="text-xs mb-2" style={{ color: C.textMuted }}>この意味の英単語は？</p>
+            <p className="text-xl font-bold leading-relaxed" style={{ color: C.text }}>{q.meaning}</p>
+          </div>
         ) : (
           <>
             <p className="text-2xl font-bold text-center" style={{ color: C.text, fontFamily: "'Inter', sans-serif" }}>
@@ -838,7 +886,7 @@ function Quiz({ words, onRemoveWord, onAnswer, onCacheContextQuestion }) {
               onClick={() => choose(c)}
               disabled={!!selected}
               className="w-full text-left px-4 py-3 rounded-xl border text-sm font-medium flex items-center gap-2.5"
-              style={{ background: bg, borderColor: border, color, fontFamily: q.mode === "context" ? "'Inter', sans-serif" : "inherit" }}
+              style={{ background: bg, borderColor: border, color, fontFamily: q.mode === "context" || q.mode === "japanese" ? "'Inter', sans-serif" : "inherit" }}
             >
               <span
                 className="w-5 h-5 rounded-full flex items-center justify-center text-xs shrink-0"
@@ -1264,7 +1312,7 @@ export default function EikenTangocho() {
             </div>
           </div>
           <span className="text-[10px] tracking-wide" style={{ color: C.textMuted }}>
-            v0.8
+            v0.9
           </span>
         </header>
 
